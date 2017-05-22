@@ -18,6 +18,7 @@
 
     <modules>
         <module>00-helloworld-spring-core</module>
+        <module>00-helloworld</module>
     </modules>
 
     <dependencyManagement>
