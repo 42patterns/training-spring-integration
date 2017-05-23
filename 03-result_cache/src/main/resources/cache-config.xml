@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:http="http://www.springframework.org/schema/integration/http"
+       xmlns:p="http://www.springframework.org/schema/p" xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+    <http:inbound-gateway path="/cache/{phrase}"
+                          request-channel="http-req"
+                          reply-channel="http-resp"
+                          reply-timeout="20000" payload-expression="#pathVariables.phrase"/>
+
+    <int:channel id="http-req">
+        <int:dispatcher task-executor="default-executor"/>
+    </int:channel>
+
+    <int:channel id="http-request">
+        <int:dispatcher task-executor="default-executor"/>
+    </int:channel>
+
+    <int:channel id="http-resp">
+        <int:interceptors>
+            <int:wire-tap channel="cache-update"/>
+        </int:interceptors>
+    </int:channel>
+
+    <int:channel id="cache-update"/>
+
+    <bean id="cache-manager" class="org.springframework.cache.support.SimpleCacheManager">
+        <property name="caches">
+            <set>
+                <bean
+                        class="org.springframework.cache.concurrent.ConcurrentMapCacheFactoryBean"
+                        p:name="default"/>
+            </set>
+        </property>
+    </bean>
+
+    <bean id="cache-layer" class="com.example.integration.cache.CacheLayer">
+        <constructor-arg ref="cache-manager"/>
+        <constructor-arg ref="http-request"/>
+    </bean>
+
+    <int:service-activator input-channel="cache-update"
+                           ref="cache-layer" method="update"/>
+
+    <int:chain input-channel="http-req">
+        <int:header-enricher>
+            <int:header name="phrase" expression="payload" />
+        </int:header-enricher>
+        <int:service-activator ref="cache-layer" method="getOrRequest"/>
+    </int:chain>
+
+    <http:outbound-gateway request-channel="http-request" reply-channel="http-resp"
+                           http-method="GET"
+                           expected-response-type="java.lang.String"
+                           url="https://api-rest-profanity.herokuapp.com/profanity/{phrase}">
+        <http:uri-variable name="phrase" expression="headers.phrase"/>
+    </http:outbound-gateway>
+
+    <task:executor id="default-executor" pool-size="5" queue-capacity="100"/>
+
+    <int:logging-channel-adapter log-full-message="true" level="INFO"
+                                 id="log"/>
+</beans>
