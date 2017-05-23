@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:http="http://www.springframework.org/schema/integration/http"
+       xmlns:file="http://www.springframework.org/schema/integration/file"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/integration/file http://www.springframework.org/schema/integration/file/spring-integration-file.xsd
+
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+    <!-- you need it to be able to deal with multipart messages, this resolver
+        uses Apache Commons FileUpload, it returns MultiValueMap -->
+    <bean id="multipartResolver"
+          class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/>
+
+    <int:channel id="out1" />
+
+    <int:channel id="out2"/>
+
+    <int:channel id="out3"/>
+
+    <int:channel id="out4"/>
+
+    <file:outbound-gateway request-channel="out1"
+                           reply-channel="file-upload-resp"
+                           directory="#{ systemProperties['java.io.tmpdir'] }/load-balancer/out1"
+                           auto-create-directory="true" delete-source-files="true"/>
+
+    <file:outbound-gateway request-channel="out2"
+                           reply-channel="file-upload-resp"
+                           directory="#{ systemProperties['java.io.tmpdir'] }/load-balancer/out2"
+                           auto-create-directory="true"/>
+
+    <file:outbound-gateway request-channel="out3"
+                           reply-channel="file-upload-resp"
+                           directory="#{ systemProperties['java.io.tmpdir'] }/load-balancer/out3"
+                           auto-create-directory="true"/>
+
+    <file:outbound-gateway request-channel="out4"
+                           reply-channel="file-upload-resp"
+                           directory="#{ systemProperties['java.io.tmpdir'] }/load-balancer/out4"
+                           auto-create-directory="true"/>
+
+    <int:channel id="file-upload-resp"/>
+
+    <int:transformer input-channel="file-upload-resp">
+        <bean class="com.example.integration.loadbalancer.tools.FilenameTransformer"/>
+    </int:transformer>
+
+</beans>

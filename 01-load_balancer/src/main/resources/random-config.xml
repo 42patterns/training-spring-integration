@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:http="http://www.springframework.org/schema/integration/http"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd"
+        profile="random">
+
+    <!-- TODO implement "random" load balancing -->
+
+    <!-- we use payload-expression to extract file content from org.springframework.http.HttpEntity,
+        where body is MultiValueMap returned by multipartResolver -->
+    <http:inbound-gateway path="/gateway/random"
+                          supported-methods="POST" request-channel="file-upload-req"/>
+
+
+    <bean name="random" class="com.example.integration.loadbalancer.tools.RandomLoadBalancer"></bean>
+
+    <int:channel id="file-upload-req">
+        <int:dispatcher load-balancer-ref="random"/>
+    </int:channel>
+
+    <int:bridge input-channel="file-upload-req" output-channel="out1"/>
+
+    <int:bridge input-channel="file-upload-req" output-channel="out2"/>
+
+    <int:bridge input-channel="file-upload-req" output-channel="out3"/>
+
+    <int:bridge input-channel="file-upload-req" output-channel="out4"/>
+
+</beans>
