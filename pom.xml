@@ -19,6 +19,7 @@
     <modules>
         <module>00-helloworld-spring-core</module>
         <module>00-helloworld</module>
+        <module>00-integration-channels</module>
     </modules>
 
     <dependencyManagement>
@@ -36,6 +37,13 @@
                 <version>${version.spring-boot}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- utils -->
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>1.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
