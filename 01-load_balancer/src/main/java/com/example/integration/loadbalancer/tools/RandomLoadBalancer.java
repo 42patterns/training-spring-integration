@@ -13,8 +13,9 @@ public class RandomLoadBalancer implements LoadBalancingStrategy {
 
 	@Override
 	public Iterator<MessageHandler> getHandlerIterator(Message<?> message, Collection<MessageHandler> handlers) {
-		//TODO: implement randomization of load balancing strategy
-		return Collections.<MessageHandler>emptyList().iterator();
+		ArrayList<MessageHandler> list = new ArrayList<>(handlers);
+		Collections.shuffle(list);
+		return list.iterator();
 	}
 
 }
