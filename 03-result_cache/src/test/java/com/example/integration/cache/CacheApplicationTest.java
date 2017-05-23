@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
@@ -19,6 +20,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
+@ActiveProfiles("java-config")
 public class CacheApplicationTest {
 
     @LocalServerPort
@@ -33,6 +35,8 @@ public class CacheApplicationTest {
         assertEquals(EntityUtils.toString(firstResult.getEntity()),
                 EntityUtils.toString(secondResult.getEntity()));
 
+
+        assertTrue(secondResult.containsHeader("Cache-Control"));
         assertEquals("immutable", secondResult.getFirstHeader("Cache-Control").getValue());
     }
 
