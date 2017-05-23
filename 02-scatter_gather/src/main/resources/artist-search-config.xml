@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:http="http://www.springframework.org/schema/integration/http"
+       xmlns:int-xml="http://www.springframework.org/schema/integration/xml"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+		http://www.springframework.org/schema/integration/xml http://www.springframework.org/schema/integration/xml/spring-integration-xml.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+    <int:logging-channel-adapter id="log" level="INFO" log-full-message="true"/>
+
+    <http:inbound-gateway id="http-gateway" path="/gateway"
+                          request-channel="http-req-channel" reply-channel="http-resp-channel"
+                          reply-timeout="60000">
+        <http:header name="Content-Type" expression="'plain/text'"/>
+    </http:inbound-gateway>
+
+    <int:channel id="http-req-channel"/>
+
+    <int:channel id="http-resp-channel"/>
+
+    <int:channel id="search-results">
+        <int:dispatcher task-executor="executor"/>
+    </int:channel>
+
+    <int:publish-subscribe-channel id="releases-resp"/>
+
+    <int:channel id="releases-resp-agg"/>
+
+    <int:chain input-channel="http-req-channel" output-channel="search-results">
+        <int:header-enricher>
+            <int:header name="Accept" value="application/xml"/>
+        </int:header-enricher>
+        <http:outbound-gateway
+                url="http://musicbrainz.org/ws/2/artist?query={query}&amp;limit=3"
+                http-method="GET" expected-response-type="java.lang.String">
+            <!-- TODO: add retry policy for failing integrations -->
+            <http:uri-variable name="query" expression="payload['artist'][0]"/>
+        </http:outbound-gateway>
+        <int-xml:xpath-splitter>
+            <int-xml:xpath-expression expression="/mb:metadata/mb:artist-list/mb:artist"
+                                      ns-prefix="mb" ns-uri="http://musicbrainz.org/ns/mmd-2.0#"/>
+        </int-xml:xpath-splitter>
+    </int:chain>
+
+    <int-xml:xpath-expression id="extract-artist-id" expression="/mb:artist/@id"
+                              ns-prefix="mb" ns-uri="http://musicbrainz.org/ns/mmd-2.0#"/>
+
+    <int:chain input-channel="search-results" output-channel="releases-resp">
+        <int-xml:xpath-transformer evaluation-type="STRING_RESULT"
+                                   xpath-expression-ref="extract-artist-id"/>
+        <http:outbound-gateway
+                url="http://musicbrainz.org/ws/2/artist/{mbid}/?inc=releases+media"
+                reply-timeout="15000"
+                http-method="GET"
+                expected-response-type="java.lang.String">
+            <!-- TODO: add retry policy for failing integrations -->
+            <http:uri-variable name="mbid" expression="payload"/>
+        </http:outbound-gateway>
+    </int:chain>
+
+    <int:aggregator input-channel="releases-resp"
+                    output-channel="releases-resp-agg"
+                    group-timeout="5000" send-partial-result-on-expiry="true"
+    />
+
+    <int:transformer input-channel="releases-resp-agg"
+                     output-channel="http-resp-channel">
+        <bean class="com.example.integration.scattergather.tools.MergeXMLDocumentTransformer"/>
+    </int:transformer>
+
+    <task:executor id="executor" pool-size="10"
+                   queue-capacity="1000"/>
+
+</beans>

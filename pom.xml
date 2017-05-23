@@ -21,6 +21,7 @@
         <module>00-helloworld</module>
         <module>00-integration-channels</module>
         <module>01-load_balancer</module>
+        <module>02-scatter_gather</module>
     </modules>
 
     <dependencyManagement>
