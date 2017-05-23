@@ -28,6 +28,7 @@ public class CacheLayer {
 
 		return MessageBuilder
                 .withPayload(wrapper.get())
+                .setHeader("Cache-Control", "immutable")
                 .build();
 	}
 

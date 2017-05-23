@@ -12,6 +12,7 @@
     <http:inbound-gateway path="/cache/{phrase}"
                           request-channel="http-req"
                           reply-channel="http-resp"
+                          mapped-response-headers="Cache-*"
                           reply-timeout="20000" payload-expression="#pathVariables.phrase"/>
 
     <int:channel id="http-req">
