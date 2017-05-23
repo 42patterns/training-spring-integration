@@ -39,7 +39,9 @@
         <http:outbound-gateway
                 url="http://musicbrainz.org/ws/2/artist?query={query}&amp;limit=3"
                 http-method="GET" expected-response-type="java.lang.String">
-            <!-- TODO: add retry policy for failing integrations -->
+            <http:request-handler-advice-chain>
+                <bean class="org.springframework.integration.handler.advice.RequestHandlerRetryAdvice" />
+            </http:request-handler-advice-chain>
             <http:uri-variable name="query" expression="payload['artist'][0]"/>
         </http:outbound-gateway>
         <int-xml:xpath-splitter>
@@ -59,7 +61,9 @@
                 reply-timeout="15000"
                 http-method="GET"
                 expected-response-type="java.lang.String">
-            <!-- TODO: add retry policy for failing integrations -->
+            <http:request-handler-advice-chain>
+                <bean class="org.springframework.integration.handler.advice.RequestHandlerRetryAdvice" />
+            </http:request-handler-advice-chain>
             <http:uri-variable name="mbid" expression="payload"/>
         </http:outbound-gateway>
     </int:chain>
