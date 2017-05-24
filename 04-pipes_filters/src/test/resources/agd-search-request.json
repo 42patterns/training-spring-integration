@@ -1,0 +1,7 @@
+{
+	"category" : "AGD",
+	"criteria" : {
+		"query" : "tele",
+		"maxPrice" : 1000
+	}
+}

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jms="http://www.springframework.org/schema/integration/jms"
+       xmlns:http="http://www.springframework.org/schema/integration/http"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:file="http://www.springframework.org/schema/integration/file"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/integration/file http://www.springframework.org/schema/integration/file/spring-integration-file.xsd
+		http://www.springframework.org/schema/integration/jms http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+    <!-- log -->
+    <int:logging-channel-adapter id="log" level="INFO" log-full-message="true" />
+
+    <!-- default poller -->
+    <int:poller id="default-poller" fixed-rate="200" default="true"/>
+
+    <!-- entry endpoint into integration flow -->
+    <file:inbound-channel-adapter directory="#{systemProperties['java.io.tmpdir']}/pipefilter/queries"
+                                  auto-create-directory="true" channel="queries"/>
+
+    <jms:channel id="queries" connection-factory="jmsConnectionFactory"
+                 queue-name="queries"
+                 acknowledge="auto" />
+
+    <!-- TODO add support for searching for music  -->
+    <int:chain input-channel="queries">
+        <file:file-to-string-transformer/>
+        <int:json-to-object-transformer
+                type="com.example.integration.pipefilters.model.SearchQueryRequest"/>
+        <int:recipient-list-router>
+            <int:recipient channel="agd-search"/>
+            <int:recipient channel="books-search"/>
+            <int:recipient channel="food-search"/>
+        </int:recipient-list-router>
+
+    </int:chain>
+
+    <!-- agd search -->
+    <int:channel id="agd-search">
+        <int:interceptors>
+            <int:wire-tap channel="log" />
+        </int:interceptors>
+    </int:channel>
+
+    <int:chain input-channel="agd-search" output-channel="search-results">
+        <int:filter expression="payload.category == 'AGD'"/>
+
+        <int:service-activator>
+            <bean class="com.example.integration.pipefilters.services.AGDSearchService" />
+        </int:service-activator>
+        <int:object-to-json-transformer/>
+    </int:chain>
+
+    <!-- books search -->
+    <int:channel id="books-search"/>
+
+    <int:chain input-channel="books-search" output-channel="search-results">
+        <int:filter expression="payload.category == 'Books'"/>
+
+        <int:service-activator>
+            <bean class="com.example.integration.pipefilters.services.BooksSearchService" />
+        </int:service-activator>
+        <int:object-to-json-transformer/>
+    </int:chain>
+
+    <!-- food search -->
+    <int:channel id="food-search"/>
+
+    <int:chain input-channel="food-search" output-channel="search-results">
+        <int:filter expression="payload.category == 'Food'"/>
+        <int:service-activator>
+            <bean class="com.example.integration.pipefilters.services.FoodSearchService" />
+        </int:service-activator>
+        <int:object-to-json-transformer/>
+    </int:chain>
+
+    <file:outbound-channel-adapter id="search-results"
+                                   auto-create-directory="true"
+                                   mode="FAIL"
+                                   delete-source-files="true"
+                                   directory="#{systemProperties['java.io.tmpdir']}/pipefilter/results" />
+</beans>

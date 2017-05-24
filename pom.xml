@@ -23,6 +23,7 @@
         <module>01-load_balancer</module>
         <module>02-scatter_gather</module>
         <module>03-result_cache</module>
+        <module>04-pipes_filters</module>
     </modules>
 
     <dependencyManagement>
