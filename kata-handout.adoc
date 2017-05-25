@@ -1,0 +1,29 @@
+[discrete]
+= Take me to casbah
+:notitle:
+
+A small, lean, MVP driven startup have built travel website, which helps people find cheap flights.
+
+== Products idea
+
+As they they already have global reach in many parts of the world, their CEO has new bright idea, to take over the world :) So they hired you, a brilliant, inteligent backend consultants - to help them build travel engine of the next century.
+
+So far they where using such techinques like “screen scraping” to look for flights, but now they want to build “google of travel”, so their customers can plan, search and book for:
+
+* flights,
+* railways,
+* coaches and busses,
+* cruises,
+* rental bikes,
+* camels,
+* public transport.
+
+== Product details
+
+* Customers can travel from any point A to any point B, even using latitude and longitude
+* Travel suppliers can add any type of transport
+* Planned travel can have any number of segments from any number of suppliers
+* We will respond in microseconds with best price, best time, money back guarantee travel options
+* Because their site is the best site in the world, you can't change it
+* They run in the „cloud” and they would love to stay there
+* There are legal and contractual limitations we will have to overcome
