@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:http="http://www.springframework.org/schema/integration/http"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+    <bean id="string-http-message-converter"
+          class="org.springframework.http.converter.StringHttpMessageConverter"/>
+
+    <http:inbound-gateway path="gateway"
+                          request-channel="integration-service" payload-expression="#requestParams['artist'][0]"/>
+
+    <int:channel id="integration-service"/>
+
+    <int:service-activator input-channel="integration-service">
+        <bean class="com.example.integration.orchestration.services.ServiceOrchestration"
+              autowire="constructor"/>
+    </int:service-activator>
+
+    <!-- TODO create two separate gateways for Events and Accomodation -->
+    <int:gateway service-interface="com.example.integration.orchestration.services.ExternalGateway"/>
+
+    <int:chain input-channel="artist-events-reqs">
+        <http:outbound-gateway
+                    url="https://rest.bandsintown.com/artists/{artist}/events?app_id=music-integration"
+                http-method="GET"
+                expected-response-type="java.lang.String">
+            <http:uri-variable name="artist" expression="payload"/>
+        </http:outbound-gateway>
+        <int:transformer>
+            <bean class="com.example.integration.orchestration.services.events.EventMapper"/>
+        </int:transformer>
+    </int:chain>
+
+    <int:chain input-channel="accommodation-reqs">
+        <int:header-enricher default-overwrite="true">
+            <int:header name="X-Mashape-Authorization" value="Z7L5R2zOR7FVcXE1KAjE2oMMiNkDf9Ll" />
+        </int:header-enricher>
+
+        <http:outbound-gateway
+                url="https://airbnb.p.mashape.com/s?location={location}&amp;checkin=20/05/2013&amp;checkout=3/22/2013&amp;guests=2&amp;page=1"
+                http-method="GET"
+                expected-response-type="java.lang.String"
+                mapped-request-headers="X-Mashape-Authorization">
+        <http:uri-variable name="location" expression="payload" />
+        </http:outbound-gateway>
+    </int:chain>
+    
+    <bean id="loggingTemplate" class="org.springframework.web.client.RestTemplate">
+        <property name="interceptors">
+            <list>
+                <bean class="com.example.integration.orchestration.services.HttpLoggingInterceptor"/>
+            </list>
+        </property>
+    </bean>
+
+</beans>

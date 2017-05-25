@@ -25,6 +25,7 @@
         <module>03-result_cache</module>
         <module>04-pipes_filters</module>
         <module>05-shared_space</module>
+        <module>06-service_orchestration</module>
     </modules>
 
     <dependencyManagement>
@@ -46,6 +47,11 @@
             </dependency>
 
             <!-- utils -->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.5</version>
+            </dependency>
             <dependency>
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
