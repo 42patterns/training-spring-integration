@@ -16,6 +16,9 @@
         <version.spring-integration>4.3.8.RELEASE</version.spring-integration>
     </properties>
 
+    <modules>
+        <module>00-helloworld-spring-core</module>
+    </modules>
 
     <dependencyManagement>
         <dependencies>
