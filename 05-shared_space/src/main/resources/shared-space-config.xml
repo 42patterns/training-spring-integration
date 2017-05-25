@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:http="http://www.springframework.org/schema/integration/http"
+       xmlns:jms="http://www.springframework.org/schema/integration/jms"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/integration/jms http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
+
+    <int:poller id="default-poller" fixed-rate="200" default="true"></int:poller>
+
+    <bean
+            class="org.springframework.integration.support.channel.BeanFactoryChannelResolver"/>
+
+    <jms:publish-subscribe-channel client-id="symentis"
+                                   id="rnd-gnrt-requests" connection-factory="jmsConnectionFactory"
+                                   topic-name="requests"
+                                   acknowledge="auto"/>
+
+    <int:service-activator input-channel="rnd-gnrt-requests"
+                           output-channel="shared-space">
+        <bean class="com.example.integration.sharedspaces.services.RandomNumberGenerator"/>
+    </int:service-activator>
+
+    <int:service-activator input-channel="rnd-gnrt-requests"
+                           output-channel="shared-space">
+        <bean class="com.example.integration.sharedspaces.services.RandomNumberGenerator"/>
+    </int:service-activator>
+
+    <int:service-activator input-channel="rnd-gnrt-requests"
+                           output-channel="shared-space">
+        <bean class="com.example.integration.sharedspaces.services.RandomNumberGenerator"/>
+    </int:service-activator>
+
+    <int:service-activator input-channel="shared-space"
+                           output-channel="hej">
+        <bean class="com.example.integration.sharedspaces.services.SharedSpace"
+              autowire="byType">
+            <constructor-arg value="52"/>
+        </bean>
+    </int:service-activator>
+
+    <int:payload-type-router input-channel="hej">
+        <int:mapping type="java.lang.String" channel="rnd-gnrt-requests"/>
+        <int:mapping type="com.example.integration.sharedspaces.services.RandomGeneratorSummary"
+                     channel="rnd-gnrt-responses"/>
+    </int:payload-type-router>
+
+    <int:chain input-channel="rnd-gnrt-responses">
+        <int:object-to-json-transformer/>
+
+        <jms:outbound-channel-adapter
+                connection-factory="jmsConnectionFactory" destination-name="results"/>
+    </int:chain>
+
+</beans>
