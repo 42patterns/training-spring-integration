@@ -1,0 +1,59 @@
+= Exercises
+
+*TODO* follow you must. There are places in code annotated as todos, which guides ou
+
+== Load balancing
+
+. Create a randomized load balancer
+.. Implement `LoadBalancingStrategy` so that the returned list of handlers will be randomized.
+Dispatcher takes first to process message, so changing the order of handlers does the job.
+
+== Scatter and gather
+
+. The http://musicbrainz.org service is not very reliable, regularly returning `503` responses - Service temporarily unavailable.
+To mitigate it we need to add appropriate retry policy, so that failing messages will be repeated.
+.. Look for `RetryTemplate` class and how it can be used with request handling advices (http://docs.spring.io/spring-integration/reference/htmlsingle/#advice-classes)
+
+. Despite retrials the response can eventually fail. Configure appropriate `errorChannel` so that error will be redirected there
+.. Class `RequestHandlerRetryAdvice` can be further configured with `recoveryCallback` (initially empty) and `retryTemplate` (initially three retries).
+.. Prepare a bean with will try only once and after failure redirect message to a newly created `myErrorChannel`.
+.. Error channel can be set during constructing `ErrorMessageSendingRecoverer` bean.
+
+== Result cache
+
+. This about you it can be tested that we are dealing with cached value (in a reliable way - other than measuring time)
+.. Generate cache-related `MessageHeader`
+.. Preserve it between channels and eventually map it within the outbound gateway
+.. Check in test if caching was successful (if the flag / header is set)
+. Spring Integration Java DSL is a new - different way - of expressing integration flows with a fluent Java interface.
+.. Rewrite the current integration from of the result cache example to fully utilize the `IntegrationFlows` builder
+.. This online Spring tutorial might be of some help and guidance:
+*** https://spring.io/blog/2014/11/25/spring-integration-java-dsl-line-by-line-tutorial
+*** https://github.com/spring-projects/spring-integration-java-dsl/wiki/spring-integration-java-dsl-reference
+. Current workflow is very complicated, non-linear and hard to reason about
+.. Based on previous assignment (explicit header that was set - refactor CacheLayer no to take `MessageChannel` as a parameter
+and explicity route the message based on headers (with `<int:header-value-router />`)
+
+== Pipes and filters
+
+. Some (most popular) products might come with subcategories (AGD / TV)
+.. Implement product searches for subcategories, for example AGD/TV, using separate queue for category
+.. Extend `Product` with subcategory field and process it accordingly
+.. When you search for AGD you go to all services, when you search AGD/TV, you go to specific service
+
+== Shared Spaces
+
+. How to trace flow of messages through integration components?
+.. Check MessageHistory and WireTap patterns
+
+== Service orchestation
+
+. AirBnB API doesn't work, find out why and fix it, and add fallback to different provider
+.. You can use Google Places API as a fallback (create a separate fallback channel in a similar way as in `Result Cache` example
+.. Use following url https://maps.googleapis.com/maps/api/place/textsearch/json?query=hotels+near+{location}&amp;key={api-key} passing over location and api key
+.. Use a following Google API key to proceed: `AIzaSyCvyRnNH7aSfWaDCG1n7IMpBEVM355scnY`
+
+== Protocol adapter
+
+. Make use of parameterized callback URL, don't hardcode it pass it as a part of HTTP request
+. Implement retry when it is not possible to send callback
