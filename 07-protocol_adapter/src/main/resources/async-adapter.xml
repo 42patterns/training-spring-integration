@@ -1,0 +1,40 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:int="http://www.springframework.org/schema/integration"
+	   xmlns:http="http://www.springframework.org/schema/integration/http"
+	   xsi:schemaLocation="http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+
+	<!-- entry point for HTTP -->
+	<http:inbound-channel-adapter
+			path="/async"
+			channel="async-http-reqs" status-code-expression="'302'"
+			payload-expression="#requestParams['artist'][0]">
+	</http:inbound-channel-adapter>
+
+	<int:channel id="async-http-reqs">
+		<int:queue />
+	</int:channel>
+
+	<int:chain input-channel="async-http-reqs">
+		<http:outbound-gateway
+			url="http://www.sputnikmusic.com/search_results.php?genreid=54&amp;search_in=Bands&amp;search_text={artist}&amp;=-1128&amp;y=-164"
+			http-method="GET"
+			expected-response-type="byte[]">
+			<http:uri-variable name="artist" expression="payload" />
+		</http:outbound-gateway>
+
+		<!-- then read content, process it, and call callback_url -->
+		<int:transformer>
+			<bean class="com.example.integration.protocoladapter.services.UnGzipIt" />
+		</int:transformer>
+		<int:transformer>
+			<bean class="com.example.integration.protocoladapter.services.ScrapWebPage" />
+		</int:transformer>
+
+		<http:outbound-channel-adapter url="http://localhost:9090/callback" />
+		<int:poller fixed-rate="200" />
+	</int:chain>
+
+</beans>

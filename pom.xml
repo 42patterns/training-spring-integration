@@ -26,6 +26,7 @@
         <module>04-pipes_filters</module>
         <module>05-shared_space</module>
         <module>06-service_orchestration</module>
+        <module>07-protocol_adapter</module>
     </modules>
 
     <dependencyManagement>
