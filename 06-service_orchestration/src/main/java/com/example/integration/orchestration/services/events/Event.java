@@ -1,5 +1,9 @@
 package com.example.integration.orchestration.services.events;
 
+import com.example.integration.orchestration.services.accommodation.Accommodation;
+
+import java.util.List;
+
 public class Event {
 
     private String venueName;
@@ -7,6 +11,8 @@ public class Event {
     private String country;
     private String website;
     private String startDate;
+    private List<Accommodation> hotels;
+
 
     public String getVenueName() {
         return venueName;
@@ -46,6 +52,14 @@ public class Event {
 
     public void setStartDate(String startDate) {
         this.startDate = startDate;
+    }
+
+    public List<Accommodation> getHotels() {
+        return hotels;
+    }
+
+    public void setHotels(List<Accommodation> hotels) {
+        this.hotels = hotels;
     }
 
     @Override

@@ -2,18 +2,16 @@ package com.example.integration.orchestration.services.accommodation;
 
 public class Accommodation {
 
-	private String price;
-
+	private String name;
 	private String address;
-
 	private String thumbURL;
 
-	public String getPrice() {
-		return price;
+	public String getName() {
+		return name;
 	}
 
-	public void setPrice(String price) {
-		this.price = price;
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public String getAddress() {

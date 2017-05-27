@@ -19,7 +19,7 @@ public class ServiceOrchestration {
         this.gateway = gateway;
     }
 
-    public String findAccomodationForEvent(Message<?> message) {
+    public List<Event> findAccomodationForEvent(Message<?> message) {
         Object payload = message.getPayload();
 
         //events
@@ -29,6 +29,7 @@ public class ServiceOrchestration {
         for (Event event : events) {
             try {
                 List<Accommodation> acc = gateway.findAccommodation(event.getCity() + ", " + event.getCountry());
+                event.setHotels(acc);
             } catch (Exception e) {
                 e.printStackTrace();
                 // TODO handle exception
@@ -36,8 +37,7 @@ public class ServiceOrchestration {
         }
 
         // TODO make sure that we return actual results in place of "Hello World!" string
-        return "Hello World!!!";
-
+        return events;
     }
 
 }
