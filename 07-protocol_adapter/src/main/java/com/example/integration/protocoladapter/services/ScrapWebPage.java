@@ -12,6 +12,8 @@ public class ScrapWebPage extends AbstractTransformer {
     protected Object doTransform(Message<?> message) throws Exception {
         String payload = (String) message.getPayload();
 
+        Thread.sleep(10000);
+
         Document doc = Jsoup.parse(payload);
         Element content = doc.getElementById("hidebox");
         return content.text();

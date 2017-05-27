@@ -1,5 +1,6 @@
 package com.example.integration.protocoladapter;
 
+import com.sun.org.apache.xpath.internal.SourceTree;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -13,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import spark.Service;
 
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -32,6 +34,7 @@ public class AsyncProtocolAdapterTest {
     public void test() throws Exception {
         final CompletableFuture<String> future = new CompletableFuture<>();
 
+        System.out.println("start time: "+ new Date());
         // creating callback handler using spark framework
         Service callback = Service.ignite();
         callback.port(9090);
@@ -42,13 +45,19 @@ public class AsyncProtocolAdapterTest {
         });
 
         HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet httpGet = new HttpGet("http://localhost:" + port + "/protocol-adapter/async?artist=King%20Crimson");
+        HttpGet httpGet = new HttpGet("http://localhost:" + port + "/protocol-adapter/" +
+                "async?artist=Tool" +
+                "&callback=http://localhost:9090/callback");
         HttpResponse httpResponse = httpClient.execute(httpGet);
 
         System.out.println("httpResponse = " + httpResponse);
+        System.out.println("httpResponse time: " + new Date());
         assertThat(httpResponse.getStatusLine().getStatusCode(), equalTo(302));
 
+
         String result = future.get(60, TimeUnit.SECONDS);
+        System.out.println("finish time: " + new Date());
+        System.out.println(result.substring(0, 200));
         assertThat(result, not(isEmptyOrNullString()));
 
     }

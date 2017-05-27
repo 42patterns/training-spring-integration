@@ -6,15 +6,22 @@
 		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
 
+	<int:logging-channel-adapter log-full-message="true" level="INFO" id="log" />
+
 	<!-- entry point for HTTP -->
 	<http:inbound-channel-adapter
 			path="/async"
-			channel="async-http-reqs" status-code-expression="'302'"
+			channel="async-http-reqs"
+			status-code-expression="'302'"
 			payload-expression="#requestParams['artist'][0]">
+		<http:header name="callback" expression="#requestParams['callback'][0]" />
 	</http:inbound-channel-adapter>
 
 	<int:channel id="async-http-reqs">
 		<int:queue />
+		<int:interceptors>
+			<int:wire-tap channel="log" />
+		</int:interceptors>
 	</int:channel>
 
 	<int:chain input-channel="async-http-reqs">
@@ -33,7 +40,7 @@
 			<bean class="com.example.integration.protocoladapter.services.ScrapWebPage" />
 		</int:transformer>
 
-		<http:outbound-channel-adapter url="http://localhost:9090/callback" />
+		<http:outbound-channel-adapter url-expression="headers.callback" />
 		<int:poller fixed-rate="200" />
 	</int:chain>
 
