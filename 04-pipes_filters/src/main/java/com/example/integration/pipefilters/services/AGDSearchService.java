@@ -17,16 +17,16 @@ public class AGDSearchService {
 
     public AGDSearchService() {
         warehouse.addAll(asList(
-                new Product("telewizor Samsung", 1000, 1),
+                new Product("telewizor Samsung", "TV", 1000, 1),
                 new Product("radio Philips", 100, 2),
                 new Product("laptop Samsung", 2000, 3),
                 new Product("mikser Mulinex", 200, 4),
                 new Product("lodówka Beko", 1200, 5),
                 new Product("pralka Beko", 8000, 6),
-                new Product("telewizor LG", 3000, 7),
-                new Product("telewizor Sony", 4000, 8),
-                new Product("mikrofala Beko", 500, 9),
-                new Product("telewizor Philips", 1900, 0))
+                new Product("telewizor LG", "TV", 3000, 7),
+                new Product("telewizor Sony", "TV", 4000, 8),
+                new Product("telewizor Philips", "TV", 1900, 0),
+                new Product("mikrofala Beko", 500, 9))
         );
     }
 
@@ -34,6 +34,15 @@ public class AGDSearchService {
         final SearchCriteria criteria = request.getCriteria();
 
         return new SearchResults(criteria, warehouse.stream()
+                .filter(Query.predicates(criteria))
+                .collect(Collectors.toList()));
+    }
+
+    public SearchResults queryWithinCategory(final SearchQueryRequest request) {
+        final SearchCriteria criteria = request.getCriteria();
+
+        return new SearchResults(criteria, warehouse.stream()
+                .filter(p -> p.getCategory() != request.getSubcategory())
                 .filter(Query.predicates(criteria))
                 .collect(Collectors.toList()));
     }

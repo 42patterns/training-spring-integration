@@ -1,19 +1,21 @@
 package com.example.integration.pipefilters.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class Product {
 
 	private String name;
+	private String category;
 	private int price;
 	private int inStock;
 
-	@JsonCreator
-	public Product(@JsonProperty("name") String name,
-				   @JsonProperty("price") int price,
-				   @JsonProperty("inStock") int inStock) {
+	public Product(String name, int price, int inStock) {
 		this.name = name;
+		this.price = price;
+		this.inStock = inStock;
+	}
+
+	public Product(String name, String category, int price, int inStock) {
+		this.name = name;
+		this.category = category;
 		this.price = price;
 		this.inStock = inStock;
 	}
@@ -24,6 +26,14 @@ public class Product {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public String getCategory() {
+		return category;
+	}
+
+	public void setCategory(String category) {
+		this.category = category;
 	}
 
 	public int getPrice() {

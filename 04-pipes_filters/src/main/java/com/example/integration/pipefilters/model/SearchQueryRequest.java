@@ -3,6 +3,7 @@ package com.example.integration.pipefilters.model;
 public class SearchQueryRequest {
 	
 	private String category;
+	private String subcategory;
 	
 	private SearchCriteria criteria;
 
@@ -18,6 +19,14 @@ public class SearchQueryRequest {
 		this.category = category;
 	}
 
+	public String getSubcategory() {
+		return subcategory;
+	}
+
+	public void setSubcategory(String subcategory) {
+		this.subcategory = subcategory;
+	}
+
 	public SearchCriteria getCriteria() {
 		return criteria;
 	}
@@ -30,6 +39,7 @@ public class SearchQueryRequest {
 	public String toString() {
 		return "SearchQueryRequest{" +
 				"category='" + category + '\'' +
+				", subcategory='" + subcategory + '\'' +
 				", criteria=" + criteria +
 				'}';
 	}

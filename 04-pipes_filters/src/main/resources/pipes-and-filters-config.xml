@@ -45,10 +45,32 @@
         </int:interceptors>
     </int:channel>
 
-    <int:chain input-channel="agd-search" output-channel="search-results">
-        <int:filter expression="payload.category == 'AGD'"/>
+    <int:channel id="agd-category-search" />
+    <int:channel id="agd-subcategory-search" />
 
-        <int:service-activator>
+    <int:chain input-channel="agd-search">
+        <int:filter expression="payload.category.startsWith('AGD')"/>
+        <int:transformer ref="categoryExtract" />
+
+        <int:recipient-list-router>
+            <int:recipient channel="agd-category-search" />
+            <int:recipient channel="agd-subcategory-search" />
+        </int:recipient-list-router>
+    </int:chain>
+
+    <int:chain input-channel="agd-category-search" output-channel="search-results">
+        <int:filter expression="payload.subcategory == null"/>
+
+        <int:service-activator method="queryForAGD">
+            <bean class="com.example.integration.pipefilters.services.AGDSearchService" />
+        </int:service-activator>
+        <int:object-to-json-transformer/>
+    </int:chain>
+
+    <int:chain input-channel="agd-subcategory-search" output-channel="search-results">
+        <int:filter expression="payload.subcategory != null"/>
+
+        <int:service-activator method="queryWithinCategory">
             <bean class="com.example.integration.pipefilters.services.AGDSearchService" />
         </int:service-activator>
         <int:object-to-json-transformer/>

@@ -2,6 +2,7 @@ package com.example.integration.pipefilters;
 
 import com.example.integration.pipefilters.model.SearchResults;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
@@ -62,8 +63,8 @@ public class SearchProductTest {
 		File file = future.get(5, TimeUnit.MINUTES);
 
 		assertEquals("agd-search-request.json", file.getName());
-		SearchResults results = new ObjectMapper().readerFor(SearchResults.class).readValue(file);
-		assertEquals("telewizor Samsung", results.getFound().get(0).getName());
+		String s = JsonPath.read(file, "$.found[0].name");
+		assertEquals("telewizor Samsung", s);
 	}
 
 }
