@@ -13,16 +13,21 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
-import org.springframework.integration.channel.interceptor.WireTap;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.channel.MessageChannels;
+import org.springframework.integration.dsl.core.MessageHandlerSpec;
 import org.springframework.integration.dsl.http.Http;
+import org.springframework.integration.dsl.support.GenericHandler;
+import org.springframework.integration.router.HeaderValueRouter;
 import org.springframework.integration.scheduling.PollerMetadata;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
 import java.util.List;
+import java.util.Map;
 
 @SpringBootApplication
 @ImportResource("classpath:cache-config.xml")
@@ -41,65 +46,35 @@ public class CacheApplication {
 class IntegrationFlowConfiguration {
 
     @Bean
-    IntegrationFlow preCache(MessageChannel httpResp,
-                             CacheLayer cacheLayer) {
+    IntegrationFlow flow(CacheLayer cacheLayer) {
+
+        MessageChannel resp = MessageChannels.direct()
+                .get();
+
         return IntegrationFlows.from(Http.inboundGateway("/cache/{phrase}")
-                .replyChannel(httpResp)
-                .replyTimeout(20000)
-                .payloadExpression("#pathVariables.phrase")
-                .get())
+                    .replyChannel(resp)
+                    .replyTimeout(20000)
+                    .payloadExpression("#pathVariables.phrase")
+                    .get())
                 .enrichHeaders(h -> h.headerExpression("phrase", "payload"))
-                .handle(cacheLayer, "getOrRequest")
+                .handle(cacheLayer::get)
+                .route("headers.containsKey('X-Cache')", m -> m
+                        .subFlowMapping("true", sf -> sf.channel(resp))
+                        .subFlowMapping("false", sf -> sf.handle(Http.outboundGateway("https://api-rest-profanity.herokuapp.com/profanity/{phrase}")
+                                .httpMethod(HttpMethod.GET)
+                                .expectedResponseType(String.class)
+                                .uriVariable("phrase", "headers.phrase")
+                                .get())
+                            .wireTap(f -> f.handle(cacheLayer::update))
+                            .channel(resp)
+                        )
+                )
                 .get();
     }
 
     @Bean
-    IntegrationFlow caching(MessageChannel cacheUpdate, CacheLayer cacheLayer) {
-        return IntegrationFlows.from(cacheUpdate)
-                .handle(msg -> cacheLayer.update(msg))
-                .get();
-    }
-
-    @Bean
-    IntegrationFlow cacheDownload(MessageChannel httpRequest, MessageChannel httpResp) {
-        return IntegrationFlows.from(httpRequest)
-                .handle(Http
-                        .outboundGateway("https://api-rest-profanity.herokuapp.com/profanity/{phrase}")
-                        .httpMethod(HttpMethod.GET)
-                        .expectedResponseType(String.class)
-                        .uriVariable("phrase", "headers.phrase")
-                        .get())
-                .channel(httpResp)
-                .get();
-    }
-
-    @Bean
-    MessageChannel httpRequest() {
-        return MessageChannels.direct().get();
-    }
-
-    @Bean
-    MessageChannel cacheUpdate() {
-        return MessageChannels.queue().get();
-    }
-
-    @Bean
-    MessageChannel httpResp(MessageChannel cacheUpdate) {
-        return MessageChannels.queue()
-                .interceptor(new WireTap(cacheUpdate))
-                .get();
-    }
-
-    @Bean(name = PollerMetadata.DEFAULT_POLLER)
-    public PollerMetadata defaultPoller() {
-        PollerMetadata pollerMetadata = new PollerMetadata();
-        pollerMetadata.setTrigger(new PeriodicTrigger(10));
-        return pollerMetadata;
-    }
-
-    @Bean
-    CacheLayer cacheLayer(CacheManager cacheManager, MessageChannel httpRequest) {
-        return new CacheLayer(cacheManager, httpRequest);
+    CacheLayer cacheLayer(CacheManager cacheManager) {
+        return new CacheLayer(cacheManager);
     }
 
     @Bean

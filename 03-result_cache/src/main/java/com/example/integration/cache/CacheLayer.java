@@ -6,29 +6,30 @@ import org.springframework.cache.CacheManager;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
+
+import java.util.Map;
 
 public class CacheLayer {
 
 	private final Cache cache;
-	private final MessageChannel messageChannel;
 
-	public CacheLayer(CacheManager cacheManager, MessageChannel messageChannel) {
+	public CacheLayer(CacheManager cacheManager) {
 		this.cache = cacheManager.getCache("default");
-		this.messageChannel = messageChannel;
 	}
 
-	public Message<?> getOrRequest(Message<?> message) {
-        Object key = message.getHeaders().get("phrase");
+	public Object get(Object payload, Map<String, Object> headers) {
+        Object key = headers.get("phrase");
         ValueWrapper wrapper = cache.get(key);
 
 		if (wrapper == null) {
-			messageChannel.send(message);
-			return null;
+			return payload;
 		}
 
 		return MessageBuilder
                 .withPayload(wrapper.get())
-                .setHeader("Cache-Control", "immutable")
+				.setHeader("Cache-Control", "immutable")
+				.setHeader("X-Cache", "true")
                 .build();
 	}
 

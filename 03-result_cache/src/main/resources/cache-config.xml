@@ -16,13 +16,9 @@
                           mapped-response-headers="Cache-*"
                           reply-timeout="20000" payload-expression="#pathVariables.phrase"/>
 
-    <int:channel id="http-req">
-        <int:dispatcher task-executor="default-executor"/>
-    </int:channel>
+    <int:channel id="http-req" />
 
-    <int:channel id="http-request">
-        <int:dispatcher task-executor="default-executor"/>
-    </int:channel>
+    <int:channel id="http-request" />
 
     <int:channel id="http-resp">
         <int:interceptors>
@@ -44,7 +40,6 @@
 
     <bean id="cache-layer" class="com.example.integration.cache.CacheLayer">
         <constructor-arg ref="cache-manager"/>
-        <constructor-arg ref="http-request"/>
     </bean>
 
     <int:service-activator input-channel="cache-update"
@@ -54,7 +49,10 @@
         <int:header-enricher>
             <int:header name="phrase" expression="payload" />
         </int:header-enricher>
-        <int:service-activator ref="cache-layer" method="getOrRequest"/>
+        <int:service-activator ref="cache-layer" method="get"/>
+        <int:header-value-router header-name="X-Cache" default-output-channel="http-request">
+            <int:mapping value="true" channel="http-resp" />
+        </int:header-value-router>
     </int:chain>
 
     <http:outbound-gateway request-channel="http-request" reply-channel="http-resp"
@@ -63,8 +61,6 @@
                            url="https://api-rest-profanity.herokuapp.com/profanity/{phrase}">
         <http:uri-variable name="phrase" expression="headers.phrase"/>
     </http:outbound-gateway>
-
-    <task:executor id="default-executor" pool-size="5" queue-capacity="100"/>
 
     <int:logging-channel-adapter log-full-message="true" level="INFO"
                                  id="log"/>
